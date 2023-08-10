@@ -7,6 +7,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -38,7 +41,7 @@ public class AppController {
 	
 	// refers to the HTTP method POST
 	@PostMapping("/data/scouting2023")
-	public String fileUpload(@RequestParam("file") MultipartFile file, RedirectAttributes redirectAttributes) {
+	public ResponseEntity<String> fileUpload(@RequestParam("file") MultipartFile file, RedirectAttributes redirectAttributes) {
 		try {
 			CsvToBean<ChargedUpFileData> csv = new CsvToBeanBuilder<ChargedUpFileData>(new InputStreamReader(file.getInputStream()))
 				.withSeparator(',') // uses COMMA seperated values
@@ -56,11 +59,11 @@ public class AppController {
 			}
 		} catch (IllegalStateException e) {
 			e.printStackTrace();
-			return "Error, IllegalStateException!";
+			return new ResponseEntity<String>("Error, IllegalStateException!", HttpStatus.INTERNAL_SERVER_ERROR);
 		} catch (IOException e) {
 			e.printStackTrace();
-			return "Error, IOException!";
+			return new ResponseEntity<String>("Error, IOException!", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
-		return "Success";
+		return new ResponseEntity<String>("Success", HttpStatus.CREATED);
 	}
 }
