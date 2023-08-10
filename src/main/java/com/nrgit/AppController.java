@@ -19,6 +19,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.opencsv.bean.CsvToBean;
 import com.opencsv.bean.CsvToBeanBuilder;
+import com.opencsv.exceptions.CsvException;
+import com.opencsv.exceptions.CsvException;
 
 // check this out https://spring.io/guides/gs/uploading-files/
 // @RestController refers to the C in MCV (model view controller)
@@ -42,6 +44,7 @@ public class AppController {
 	// refers to the HTTP method POST
 	@PostMapping("/data/scouting2023")
 	public ResponseEntity<String> fileUpload(@RequestParam("file") MultipartFile file, RedirectAttributes redirectAttributes) {
+		if(file == null) return new ResponseEntity<String>("Error: must have a file.", HttpStatus.BAD_REQUEST);
 		try {
 			CsvToBean<ChargedUpFileData> csv = new CsvToBeanBuilder<ChargedUpFileData>(new InputStreamReader(file.getInputStream()))
 				.withSeparator(',') // uses COMMA seperated values
@@ -57,12 +60,21 @@ public class AppController {
 				}
 				repository.save(piece);
 			}
+			if(data.size() == 0) {
+				return new ResponseEntity<String>("Error: must have a file.", HttpStatus.BAD_REQUEST);
+			}
 		} catch (IllegalStateException e) {
 			e.printStackTrace();
 			return new ResponseEntity<String>("Error, IllegalStateException!", HttpStatus.INTERNAL_SERVER_ERROR);
 		} catch (IOException e) {
 			e.printStackTrace();
 			return new ResponseEntity<String>("Error, IOException!", HttpStatus.INTERNAL_SERVER_ERROR);
+		} catch (Exception e) {
+			if(e instanceof CsvException) return new ResponseEntity<String>("Error in CSV.", HttpStatus.BAD_REQUEST);
+			else {
+				e.printStackTrace();
+				return new ResponseEntity<String>("Error: " + e.getClass().getName(), HttpStatus.INTERNAL_SERVER_ERROR);
+			}
 		}
 		return new ResponseEntity<String>("Success", HttpStatus.CREATED);
 	}
